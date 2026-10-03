@@ -1,0 +1,98 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard & Analytics | Calisthenics Tracker{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-0">General Stats & Progress</h2>
+        <p class="text-muted mb-0">Track your performance gains and recent activities</p>
+    </div>
+</div>
+
+<!-- STATS CARDS -->
+<div class="row g-3 mb-4">
+    <!-- Weekly Workouts Card -->
+    <div class="col-md-6 col-lg-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted small fw-semibold">WORKOUTS (THIS WEEK)</span>
+                    <i class="bi bi-calendar-week fs-4 text-primary"></i>
+                </div>
+                <h3 class="fw-bold mb-1">{{ current_week_workouts }}</h3>
+                <span class="badge {% if weekly_change_pct >= 0 %}bg-success-subtle text-success{% else %}bg-danger-subtle text-danger{% endif %} rounded-pill">
+                    {% if weekly_change_pct >= 0 %}+{% endif %}{{ weekly_change_pct }}% vs last week
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Monthly Volume Card -->
+    <div class="col-md-6 col-lg-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="text-muted small fw-semibold">TOTAL VOLUME (30 DAYS)</span>
+                    <i class="bi bi-bar-chart-line fs-4 text-success"></i>
+                </div>
+                <h3 class="fw-bold mb-1">{{ current_month_volume }} <small class="fs-6 text-muted">lbs</small></h3>
+                <span class="badge {% if monthly_volume_pct >= 0 %}bg-success-subtle text-success{% else %}bg-danger-subtle text-danger{% endif %} rounded-pill">
+                    {% if monthly_volume_pct >= 0 %}+{% endif %}{{ monthly_volume_pct }}% vs last month
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- TOP EXERCISES & RECENT WORKOUTS -->
+<div class="row g-4">
+    <!-- Top Most Frequent Exercises -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-0 py-3">
+                <h5 class="fw-bold mb-0"><i class="bi bi-trophy text-warning me-2"></i> Top Performed Exercises</h5>
+            </div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush">
+                    {% for exercise in top_frequent_exercises %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                        <div>
+                            <h6 class="mb-0 fw-bold">{{ exercise.name }}</h6>
+                            <small class="text-muted text-uppercase">{{ exercise.category }}</small>
+                        </div>
+                        <span class="badge bg-primary rounded-pill">{{ exercise.total_sets }} sets done</span>
+                    </li>
+                    {% empty %}
+                    <li class="list-group-item text-muted text-center py-4">No exercises recorded yet</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Workouts -->
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-0 py-3">
+                <h5 class="fw-bold mb-0"><i class="bi bi-clock-history text-info me-2"></i> Recent Sessions</h5>
+            </div>
+            <div class="card-body p-0">
+                <ul class="list-group list-group-flush">
+                    {% for workout in recent_workouts %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                        <div>
+                            <h6 class="mb-0 fw-bold">{{ workout.get_type_display }}</h6>
+                            <small class="text-muted">{{ workout.started_at|date:"M d, Y - H:i" }}</small>
+                        </div>
+                        <span class="badge bg-secondary">{{ workout.total_volume }} lbs</span>
+                    </li>
+                    {% empty %}
+                    <li class="list-group-item text-muted text-center py-4">No recent workouts</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

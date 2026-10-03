@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block title %}Workout Sets | Calisthenics Tracker{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-0">Completed Workout Sets</h2>
+        <p class="text-muted mb-0">Individual repetitions, weights, and rest periods recorded</p>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th scope="col" class="ps-4">Exercise</th>
+                        <th scope="col">Reps</th>
+                        <th scope="col">Weight</th>
+                        <th scope="col">Duration</th>
+                        <th scope="col">Rest Time</th>
+                        <th scope="col">Workout Session</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for set in sets %}
+                    <tr>
+                        <td class="ps-4 fw-bold text-primary">{{ set.exercise.name }}</td>
+                        <td><span class="badge bg-primary rounded-pill">{{ set.reps|default:"0" }} reps</span></td>
+                        <td>{{ set.weight|default:"0" }} lbs</td>
+                        <td>{{ set.duration|default:"-" }}</td>
+                        <td>{{ set.rest_time|default:"-" }}</td>
+                        <td class="small text-muted">
+                            {{ set.workout.get_type_display }} ({{ set.workout.started_at|date:"M d, Y" }})
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i class="bi bi-layers fs-1 d-block mb-2"></i>
+                            No workout sets logged yet.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

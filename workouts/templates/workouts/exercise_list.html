@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+
+{% block title %}Exercise Catalog | Calisthenics Tracker{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-0">Exercise Catalog</h2>
+        <p class="text-muted mb-0">Filter and search exercises by name, category, or muscle group</p>
+    </div>
+</div>
+
+<!-- Search & Filter Card -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-4">
+        <form method="GET" action="">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">Search Query</label>
+                    {{ form.query }}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-bold">Category</label>
+                    {{ form.category }}
+                </div>
+                <div class="col-12">
+                    <label class="form-label fw-bold d-block mb-2">Target Muscles</label>
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for checkbox in form.target_muscles %}
+                            <div class="form-check bg-white border rounded px-3 py-1">
+                                {{ checkbox.tag }}
+                                <label class="form-check-label ms-1" for="{{ checkbox.id_for_label }}">
+                                    {{ checkbox.choice_label }}
+                                </label>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                <div class="col-12 text-end">
+                    <a href="{% url 'exercise_list' %}" class="btn btn-outline-secondary me-2">Reset Filters</a>
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="bi bi-search"></i> Search Exercises
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Exercise Cards Grid -->
+<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+    {% for exercise in exercises %}
+        <div class="col">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h5 class="card-title fw-bold text-primary mb-0">{{ exercise.name }}</h5>
+                        <span class="badge bg-dark text-uppercase">{{ exercise.get_category_display }}</span>
+                    </div>
+                    <p class="card-text text-muted small">{{ exercise.description|default:"No description provided." }}</p>
+
+                    <div class="mt-3">
+                        <small class="text-uppercase fw-semibold text-muted d-block mb-1" style="font-size: 0.75rem;">Target Muscles:</small>
+                        {% for muscle in exercise.target_muscles.all %}
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle me-1">{{ muscle.name }}</span>
+                        {% empty %}
+                            <span class="text-muted small">None specified</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <div class="col-12 text-center py-5">
+            <i class="bi bi-search fs-1 text-muted mb-3 d-block"></i>
+            <h5 class="text-muted">No exercises found matching your criteria</h5>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}

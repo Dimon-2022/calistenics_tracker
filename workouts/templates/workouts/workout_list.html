@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+
+{% block title %}Workout History | Calisthenics Tracker{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-0">Workout History</h2>
+        <p class="text-muted mb-0">View and filter your previous training sessions</p>
+    </div>
+    <a href="{% url 'workout_create' %}" class="btn btn-primary rounded-pill">
+        <i class="bi bi-plus-lg"></i> Log New Workout
+    </a>
+</div>
+
+<!-- Search & Filter Card -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-4">
+        <form method="GET" action="">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">Workout Type</label>
+                    {{ form.type }}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">From Date</label>
+                    {{ form.date_from }}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">To Date</label>
+                    {{ form.date_to }}
+                </div>
+                <div class="col-12 text-end">
+                    <a href="{% url 'workout_list' %}" class="btn btn-outline-secondary me-2">Reset</a>
+                    <button type="submit" class="btn btn-primary px-4">
+                        <i class="bi bi-filter"></i> Apply Filters
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Workouts List -->
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th scope="col" class="ps-4">Type</th>
+                        <th scope="col">Started At</th>
+                        <th scope="col">Duration</th>
+                        <th scope="col">Total Volume</th>
+                        <th scope="col">Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for workout in workouts %}
+                    <tr>
+                        <td class="ps-4 fw-bold text-primary">
+                            {{ workout.get_type_display }}
+                        </td>
+                        <td>{{ workout.started_at|date:"M d, Y - H:i" }}</td>
+                        <td>
+                            {% if workout.total_duration %}
+                                <span class="badge bg-secondary-subtle text-dark border">
+                                    {{ workout.total_duration }}
+                                </span>
+                            {% else %}
+                                <span class="text-muted">In Progress</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold">
+                                {{ workout.total_volume }} lbs
+                            </span>
+                        </td>
+                        <td class="text-muted small text-truncate" style="max-width: 250px;">
+                            {{ workout.notes|default:"-" }}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-5 text-muted">
+                            <i class="bi bi-journal-x fs-1 d-block mb-2"></i>
+                            No workout sessions logged yet.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

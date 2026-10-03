@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block title %}Log New Workout | Calisthenics Tracker{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-dark text-white py-3">
+                <h4 class="fw-bold mb-0"><i class="bi bi-plus-circle me-2"></i> Log New Workout</h4>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" action="">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Started At</label>
+                        {{ form.started_at }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Finished At (Optional)</label>
+                        {{ form.finished_at }}
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Workout Type</label>
+                        {{ form.type }}
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Session Notes</label>
+                        {{ form.notes }}
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <a href="{% url 'workout_list' %}" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4">Save Workout Session</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
