@@ -3,11 +3,13 @@ from django.conf import settings
 from django.db import models
 from django.db.models import F, Sum
 
+
 class Muscle(models.Model):
     name = models.CharField(max_length=50)
 
     def __str__(self):
         return self.name
+
 
 class Exercise(models.Model):
     CATEGORY_CHOICES = [
@@ -18,6 +20,13 @@ class Exercise(models.Model):
         ('skill', 'Skill'),
     ]
 
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name='custom_exercises'
+    )
     name = models.CharField(max_length=100)
     description = models.TextField(blank=True)
     category = models.CharField(choices=CATEGORY_CHOICES, max_length=20)
@@ -29,6 +38,7 @@ class Exercise(models.Model):
 
     def __str__(self):
         return self.name
+
 
 class Workout(models.Model):
     WORKOUT_TYPE_CHOICES = [
@@ -65,6 +75,7 @@ class Workout(models.Model):
             total=Sum(F('reps') * F('weight'))
         )['total']
         return result or 0
+
 
 class WorkoutSet(models.Model):
     workout = models.ForeignKey(

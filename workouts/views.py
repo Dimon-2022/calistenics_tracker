@@ -4,7 +4,7 @@ from django.db.models import Count, Sum, F, Q
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from .models import Exercise, Workout, WorkoutSet
-from .forms import ExerciseSearchForm, WorkoutForm, WorkoutSetForm, WorkoutSearchForm
+from .forms import ExerciseSearchForm, ExerciseForm, WorkoutForm, WorkoutSearchForm
 
 
 @login_required
@@ -64,10 +64,14 @@ def dashboard_view(request):
     return render(request, 'workouts/dashboard.html', context)
 
 
+@login_required
 def exercise_list_view(request):
-    """Catalog of exercises with filtering by name, category, and target muscles."""
+    """Catalog of global exercises PLUS user's private custom exercises."""
     form = ExerciseSearchForm(request.GET or None)
-    exercises = Exercise.objects.all().prefetch_related('target_muscles')
+
+    exercises = Exercise.objects.filter(
+        Q(user__isnull=True) | Q(user=request.user)
+    ).prefetch_related('target_muscles')
 
     if form.is_valid():
         query = form.cleaned_data.get('query')
@@ -78,19 +82,34 @@ def exercise_list_view(request):
             exercises = exercises.filter(
                 Q(name__icontains=query) | Q(description__icontains=query) | Q(target_muscles__name__icontains=query)
             )
-
         if category:
             exercises = exercises.filter(category=category)
-
         if target_muscles:
             exercises = exercises.filter(target_muscles__in=target_muscles)
 
-    exercises = exercises.distinct()
+    exercises = exercises.distinct().order_by('name')
 
     return render(request, 'workouts/exercise_list.html', {
         'form': form,
         'exercises': exercises
     })
+
+
+@login_required
+def exercise_create_view(request):
+    """Create a private custom exercise for the logged-in user."""
+    if request.method == 'POST':
+        form = ExerciseForm(request.POST)
+        if form.is_valid():
+            exercise = form.save(commit=False)
+            exercise.user = request.user
+            exercise.save()
+            form.save_m2m()
+            return redirect('exercise_list')
+    else:
+        form = ExerciseForm()
+
+    return render(request, 'workouts/exercise_form.html', {'form': form})
 
 
 @login_required
