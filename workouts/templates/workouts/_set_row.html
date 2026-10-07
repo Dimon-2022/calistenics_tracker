@@ -1,0 +1,14 @@
+<tr class="set-form-row">
+    <td>
+        {{ set_form.id }}
+        {{ set_form.exercise }}
+        {% for error in set_form.non_field_errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+        {% for error in set_form.exercise.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+    </td>
+    <td>{{ set_form.reps }}{% for error in set_form.reps.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}</td>
+    <td>{{ set_form.weight }}{% for error in set_form.weight.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}</td>
+    <td>{{ set_form.duration }}{% for error in set_form.duration.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}</td>
+    <td>{{ set_form.rest_time }}{% for error in set_form.rest_time.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}</td>
+    <td>{{ set_form.rpe }}{% for error in set_form.rpe.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}</td>
+    <td class="text-center">{{ set_form.DELETE }}</td>
+</tr>

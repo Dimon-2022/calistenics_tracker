@@ -1,98 +1,222 @@
 {% extends 'base.html' %}
+{% load workout_extras %}
 
 {% block title %}Dashboard & Analytics | Calisthenics Tracker{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
     <div>
-        <h2 class="fw-bold mb-0">General Stats & Progress</h2>
-        <p class="text-muted mb-0">Track your performance gains and recent activities</p>
+        <h2 class="fw-bold mb-0">Your Progress</h2>
+        <p class="text-muted mb-0">
+            {% if period == 'year' %}Last 12 months vs the 12 months before
+            {% elif period == 'month' %}Last 30 days vs the previous 30 days
+            {% else %}Last 7 days vs the previous 7 days{% endif %}
+        </p>
+    </div>
+    <div class="btn-group" role="group" aria-label="Period">
+        {% for key, label in periods.items %}
+            <a href="?period={{ key }}" class="btn {% if key == period %}btn-primary{% else %}btn-outline-primary{% endif %}">{{ label }}</a>
+        {% endfor %}
     </div>
 </div>
 
 <!-- STATS CARDS -->
 <div class="row g-3 mb-4">
-    <!-- Weekly Workouts Card -->
-    <div class="col-md-6 col-lg-3">
+    {% include 'workouts/_stat_card.html' with label='Workouts' icon='bi-calendar-check' value=current.workouts change=changes.workouts %}
+    {% include 'workouts/_stat_card.html' with label='Sets' icon='bi-layers' value=current.sets change=changes.sets %}
+    {% include 'workouts/_stat_card.html' with label='Total reps' icon='bi-arrow-repeat' value=current.reps change=changes.reps %}
+    {% include 'workouts/_stat_card.html' with label='Hold time' icon='bi-hourglass-split' value=current.hold_seconds|duration change=changes.hold_seconds %}
+</div>
+
+<!-- CHARTS -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-8">
         <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-0 pt-3">
+                <h5 class="fw-bold mb-0">Reps per {% if period == 'year' %}month{% else %}day{% endif %}</h5>
+            </div>
+            <div class="card-body"><div style="height: 260px;"><canvas id="repsChart"></canvas></div></div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white border-0 pt-3">
+                <h5 class="fw-bold mb-0">Sets by muscle group</h5>
+            </div>
             <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span class="text-muted small fw-semibold">WORKOUTS (THIS WEEK)</span>
-                    <i class="bi bi-calendar-week fs-4 text-primary"></i>
-                </div>
-                <h3 class="fw-bold mb-1">{{ current_week_workouts }}</h3>
-                <span class="badge {% if weekly_change_pct >= 0 %}bg-success-subtle text-success{% else %}bg-danger-subtle text-danger{% endif %} rounded-pill">
-                    {% if weekly_change_pct >= 0 %}+{% endif %}{{ weekly_change_pct }}% vs last week
-                </span>
+                {% if chart.muscles.values %}
+                    <div style="height: 260px;"><canvas id="musclesChart"></canvas></div>
+                {% else %}
+                    <p class="text-muted text-center py-5 mb-0">No sets in this period</p>
+                {% endif %}
             </div>
         </div>
     </div>
-
-    <!-- Monthly Volume Card -->
-    <div class="col-md-6 col-lg-3">
-        <div class="card border-0 shadow-sm h-100">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <span class="text-muted small fw-semibold">TOTAL VOLUME (30 DAYS)</span>
-                    <i class="bi bi-bar-chart-line fs-4 text-success"></i>
-                </div>
-                <h3 class="fw-bold mb-1">{{ current_month_volume }} <small class="fs-6 text-muted">lbs</small></h3>
-                <span class="badge {% if monthly_volume_pct >= 0 %}bg-success-subtle text-success{% else %}bg-danger-subtle text-danger{% endif %} rounded-pill">
-                    {% if monthly_volume_pct >= 0 %}+{% endif %}{{ monthly_volume_pct }}% vs last month
-                </span>
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-0 pt-3">
+                <h5 class="fw-bold mb-0">Hold time per {% if period == 'year' %}month{% else %}day{% endif %} <small class="text-muted fw-normal">(seconds)</small></h5>
             </div>
+            <div class="card-body"><div style="height: 180px;"><canvas id="holdChart"></canvas></div></div>
         </div>
     </div>
 </div>
 
-<!-- TOP EXERCISES & RECENT WORKOUTS -->
-<div class="row g-4">
-    <!-- Top Most Frequent Exercises -->
+<!-- TOP EXERCISES -->
+<div class="row g-4 mb-4">
     <div class="col-lg-6">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-header bg-white border-0 py-3">
-                <h5 class="fw-bold mb-0"><i class="bi bi-trophy text-warning me-2"></i> Top Performed Exercises</h5>
+                <h5 class="fw-bold mb-0"><i class="bi bi-trophy text-warning me-2"></i>Top 3 most frequent</h5>
             </div>
-            <div class="card-body p-0">
-                <ul class="list-group list-group-flush">
-                    {% for exercise in top_frequent_exercises %}
-                    <li class="list-group-item d-flex justify-content-between align-items-center py-3">
-                        <div>
-                            <h6 class="mb-0 fw-bold">{{ exercise.name }}</h6>
-                            <small class="text-muted text-uppercase">{{ exercise.category }}</small>
-                        </div>
-                        <span class="badge bg-primary rounded-pill">{{ exercise.total_sets }} sets done</span>
-                    </li>
-                    {% empty %}
-                    <li class="list-group-item text-muted text-center py-4">No exercises recorded yet</li>
-                    {% endfor %}
-                </ul>
-            </div>
+            <ul class="list-group list-group-flush">
+                {% for item in top_frequent %}
+                <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                    <div>
+                        <span class="fw-bold me-2 text-muted">#{{ forloop.counter }}</span>
+                        <span class="fw-bold">{{ item.exercise.name }}</span>
+                        <small class="text-muted text-uppercase ms-2">{{ item.exercise.get_category_display }}</small>
+                    </div>
+                    <span class="badge bg-primary rounded-pill">{{ item.sets }} sets</span>
+                </li>
+                {% empty %}
+                <li class="list-group-item text-muted text-center py-4">No exercises recorded in this period</li>
+                {% endfor %}
+            </ul>
         </div>
     </div>
 
-    <!-- Recent Workouts -->
     <div class="col-lg-6">
         <div class="card border-0 shadow-sm h-100">
             <div class="card-header bg-white border-0 py-3">
-                <h5 class="fw-bold mb-0"><i class="bi bi-clock-history text-info me-2"></i> Recent Sessions</h5>
+                <h5 class="fw-bold mb-0"><i class="bi bi-graph-up-arrow text-success me-2"></i>Top 3 by progress</h5>
+                <small class="text-muted">Best set this {{ period_label|lower }} vs the previous one</small>
             </div>
-            <div class="card-body p-0">
-                <ul class="list-group list-group-flush">
-                    {% for workout in recent_workouts %}
-                    <li class="list-group-item d-flex justify-content-between align-items-center py-3">
-                        <div>
-                            <h6 class="mb-0 fw-bold">{{ workout.get_type_display }}</h6>
-                            <small class="text-muted">{{ workout.started_at|date:"M d, Y - H:i" }}</small>
+            <ul class="list-group list-group-flush">
+                {% for item in top_progress %}
+                <li class="list-group-item d-flex justify-content-between align-items-center py-3">
+                    <div>
+                        <span class="fw-bold me-2 text-muted">#{{ forloop.counter }}</span>
+                        <span class="fw-bold">{{ item.exercise.name }}</span>
+                        <div class="small text-muted">
+                            {{ item.previous|performance:item.exercise }} → {{ item.current|performance:item.exercise }}
                         </div>
-                        <span class="badge bg-secondary">{{ workout.total_volume }} lbs</span>
-                    </li>
-                    {% empty %}
-                    <li class="list-group-item text-muted text-center py-4">No recent workouts</li>
-                    {% endfor %}
-                </ul>
-            </div>
+                    </div>
+                    <span class="badge rounded-pill {% if item.pct >= 0 %}bg-success-subtle text-success{% else %}bg-danger-subtle text-danger{% endif %}">
+                        <i class="bi {% if item.pct >= 0 %}bi-arrow-up{% else %}bi-arrow-down{% endif %}"></i>
+                        {% if item.pct >= 0 %}+{% endif %}{{ item.pct }}%
+                    </span>
+                </li>
+                {% empty %}
+                <li class="list-group-item text-muted text-center py-4">
+                    Train the same exercise in two consecutive periods to see progress
+                </li>
+                {% endfor %}
+            </ul>
         </div>
     </div>
 </div>
+
+<!-- RECENT WORKOUTS -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-0 py-3 d-flex justify-content-between align-items-center">
+        <h5 class="fw-bold mb-0"><i class="bi bi-clock-history text-info me-2"></i>Recent sessions</h5>
+        <a href="{% url 'workout_list' %}" class="small">View all</a>
+    </div>
+    <ul class="list-group list-group-flush">
+        {% for workout in recent_workouts %}
+        <a href="{% url 'workout_detail' workout.pk %}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-3">
+            <div>
+                <h6 class="mb-0 fw-bold">{{ workout.get_type_display }}</h6>
+                <small class="text-muted">{{ workout.started_at|date:"M d, Y - H:i" }}</small>
+            </div>
+            <div class="d-flex gap-2">
+                <span class="badge bg-secondary">{{ workout.sets_count }} sets</span>
+                <span class="badge bg-primary">{{ workout.total_reps|default:0 }} reps</span>
+            </div>
+        </a>
+        {% empty %}
+        <li class="list-group-item text-muted text-center py-4">
+            No workouts yet — <a href="{% url 'workout_create' %}">log your first one</a>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+
+{{ chart|json_script:"chart-data" }}
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const data = JSON.parse(document.getElementById('chart-data').textContent);
+    const ink = '#6c757d';
+    const grid = 'rgba(0, 0, 0, 0.06)';
+
+    Chart.defaults.color = ink;
+    Chart.defaults.font.family = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
+
+    function barChart(id, labels, values, color, unit) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        new Chart(el, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: values,
+                    backgroundColor: color,
+                    borderRadius: { topLeft: 4, topRight: 4 },
+                    borderSkipped: 'bottom',
+                    maxBarThickness: 28,
+                }],
+            },
+            options: {
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: ctx => `${ctx.parsed.y} ${unit}` } },
+                },
+                scales: {
+                    x: { grid: { display: false } },
+                    y: { beginAtZero: true, grid: { color: grid }, ticks: { precision: 0 } },
+                },
+            },
+        });
+    }
+
+    barChart('repsChart', data.labels, data.reps, '#0d6efd', 'reps');
+    barChart('holdChart', data.labels, data.hold, '#198754', 's');
+
+    const musclesEl = document.getElementById('musclesChart');
+    if (musclesEl) {
+        new Chart(musclesEl, {
+            type: 'bar',
+            data: {
+                labels: data.muscles.labels,
+                datasets: [{
+                    data: data.muscles.values,
+                    backgroundColor: '#6f42c1',
+                    borderRadius: { topRight: 4, bottomRight: 4 },
+                    borderSkipped: 'left',
+                    maxBarThickness: 18,
+                }],
+            },
+            options: {
+                indexAxis: 'y',
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: { callbacks: { label: ctx => `${ctx.parsed.x} sets` } },
+                },
+                scales: {
+                    x: { beginAtZero: true, grid: { color: grid }, ticks: { precision: 0 } },
+                    y: { grid: { display: false } },
+                },
+            },
+        });
+    }
+});
+</script>
 {% endblock %}

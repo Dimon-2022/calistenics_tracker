@@ -1,9 +1,10 @@
 {% extends 'base.html' %}
+{% load workout_extras %}
 
 {% block title %}Workout History | Calisthenics Tracker{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
     <div>
         <h2 class="fw-bold mb-0">Workout History</h2>
         <p class="text-muted mb-0">View and filter your previous training sessions</p>
@@ -18,16 +19,20 @@
     <div class="card-body p-4">
         <form method="GET" action="">
             <div class="row g-3">
-                <div class="col-md-4">
-                    <label class="form-label fw-bold">Workout Type</label>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold" for="{{ form.type.id_for_label }}">Workout Type</label>
                     {{ form.type }}
                 </div>
-                <div class="col-md-4">
-                    <label class="form-label fw-bold">From Date</label>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold" for="{{ form.muscle.id_for_label }}">Muscle Group</label>
+                    {{ form.muscle }}
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold" for="{{ form.date_from.id_for_label }}">From Date</label>
                     {{ form.date_from }}
                 </div>
-                <div class="col-md-4">
-                    <label class="form-label fw-bold">To Date</label>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold" for="{{ form.date_to.id_for_label }}">To Date</label>
                     {{ form.date_to }}
                 </div>
                 <div class="col-12 text-end">
@@ -51,29 +56,31 @@
                         <th scope="col" class="ps-4">Type</th>
                         <th scope="col">Started At</th>
                         <th scope="col">Duration</th>
-                        <th scope="col">Total Volume</th>
+                        <th scope="col">Exercises</th>
+                        <th scope="col">Sets</th>
+                        <th scope="col">Reps</th>
                         <th scope="col">Notes</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for workout in workouts %}
-                    <tr>
-                        <td class="ps-4 fw-bold text-primary">
-                            {{ workout.get_type_display }}
+                    {% for workout in page_obj %}
+                    <tr style="cursor: pointer;" onclick="window.location='{% url 'workout_detail' workout.pk %}'">
+                        <td class="ps-4 fw-bold">
+                            <a href="{% url 'workout_detail' workout.pk %}" class="text-decoration-none">{{ workout.get_type_display }}</a>
                         </td>
                         <td>{{ workout.started_at|date:"M d, Y - H:i" }}</td>
                         <td>
                             {% if workout.total_duration %}
-                                <span class="badge bg-secondary-subtle text-dark border">
-                                    {{ workout.total_duration }}
-                                </span>
+                                <span class="badge bg-secondary-subtle text-dark border">{{ workout.total_duration|duration }}</span>
                             {% else %}
-                                <span class="text-muted">In Progress</span>
+                                <span class="text-muted">—</span>
                             {% endif %}
                         </td>
+                        <td>{{ workout.exercises_count }}</td>
+                        <td>{{ workout.sets_count }}</td>
                         <td>
                             <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold">
-                                {{ workout.total_volume }} lbs
+                                {{ workout.total_reps|default:0 }}
                             </span>
                         </td>
                         <td class="text-muted small text-truncate" style="max-width: 250px;">
@@ -82,9 +89,9 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="5" class="text-center py-5 text-muted">
+                        <td colspan="7" class="text-center py-5 text-muted">
                             <i class="bi bi-journal-x fs-1 d-block mb-2"></i>
-                            No workout sessions logged yet.
+                            No workout sessions found.
                         </td>
                     </tr>
                     {% endfor %}
@@ -93,4 +100,5 @@
         </div>
     </div>
 </div>
+{% include 'workouts/_pagination.html' %}
 {% endblock %}

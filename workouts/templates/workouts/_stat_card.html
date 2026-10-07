@@ -1,0 +1,18 @@
+<div class="col-6 col-lg-3">
+    <div class="card border-0 shadow-sm h-100">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="text-muted small fw-semibold text-uppercase">{{ label }}</span>
+                <i class="bi {{ icon }} fs-4 text-primary"></i>
+            </div>
+            <h3 class="fw-bold mb-1">{{ value }}</h3>
+            {% if change is None %}
+                <span class="badge bg-secondary-subtle text-secondary rounded-pill">no data to compare</span>
+            {% else %}
+                <span class="badge {% if change >= 0 %}bg-success-subtle text-success{% else %}bg-danger-subtle text-danger{% endif %} rounded-pill">
+                    {% if change >= 0 %}+{% endif %}{{ change }}% vs previous
+                </span>
+            {% endif %}
+        </div>
+    </div>
+</div>

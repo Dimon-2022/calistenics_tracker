@@ -3,11 +3,14 @@
 {% block title %}Exercise Catalog | Calisthenics Tracker{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
     <div>
         <h2 class="fw-bold mb-0">Exercise Catalog</h2>
         <p class="text-muted mb-0">Filter and search exercises by name, category, or muscle group</p>
     </div>
+    <a href="{% url 'exercise_create' %}" class="btn btn-success rounded-pill shadow-sm">
+        <i class="bi bi-plus-lg me-1"></i> Add Custom Exercise
+    </a>
 </div>
 
 <!-- Search & Filter Card -->
@@ -16,15 +19,15 @@
         <form method="GET" action="">
             <div class="row g-3">
                 <div class="col-md-6">
-                    <label class="form-label fw-bold">Search Query</label>
+                    <label class="form-label fw-bold" for="{{ form.query.id_for_label }}">Search Query</label>
                     {{ form.query }}
                 </div>
                 <div class="col-md-6">
-                    <label class="form-label fw-bold">Category</label>
+                    <label class="form-label fw-bold" for="{{ form.category.id_for_label }}">Category</label>
                     {{ form.category }}
                 </div>
                 <div class="col-12">
-                    <label class="form-label fw-bold d-block mb-2">Target Muscles</label>
+                    <label class="form-label fw-bold d-block mb-2">Muscle Groups</label>
                     <div class="d-flex flex-wrap gap-2">
                         {% for checkbox in form.target_muscles %}
                             <div class="form-check bg-white border rounded px-3 py-1">
@@ -36,7 +39,13 @@
                         {% endfor %}
                     </div>
                 </div>
-                <div class="col-12 text-end">
+                <div class="col-md-6 d-flex align-items-center">
+                    <div class="form-check">
+                        {{ form.only_custom }}
+                        <label class="form-check-label" for="{{ form.only_custom.id_for_label }}">{{ form.only_custom.label }}</label>
+                    </div>
+                </div>
+                <div class="col-md-6 text-end">
                     <a href="{% url 'exercise_list' %}" class="btn btn-outline-secondary me-2">Reset Filters</a>
                     <button type="submit" class="btn btn-primary px-4">
                         <i class="bi bi-search"></i> Search Exercises
@@ -52,20 +61,36 @@
     {% for exercise in exercises %}
         <div class="col">
             <div class="card h-100 border-0 shadow-sm">
-                <div class="card-body">
+                <div class="card-body d-flex flex-column">
                     <div class="d-flex justify-content-between align-items-start mb-2">
-                        <h5 class="card-title fw-bold text-primary mb-0">{{ exercise.name }}</h5>
+                        <h5 class="card-title fw-bold text-primary mb-0">
+                            {{ exercise.name }}
+                            {% if exercise.is_custom %}
+                                <span class="badge bg-warning text-dark ms-1" style="font-size: 0.65rem;">Custom</span>
+                            {% endif %}
+                        </h5>
                         <span class="badge bg-dark text-uppercase">{{ exercise.get_category_display }}</span>
                     </div>
+                    <small class="text-muted mb-2"><i class="bi bi-rulers me-1"></i>Measured by: {{ exercise.get_metric_type_display }}</small>
                     <p class="card-text text-muted small">{{ exercise.description|default:"No description provided." }}</p>
 
-                    <div class="mt-3">
+                    <div class="mt-auto">
                         <small class="text-uppercase fw-semibold text-muted d-block mb-1" style="font-size: 0.75rem;">Target Muscles:</small>
                         {% for muscle in exercise.target_muscles.all %}
                             <span class="badge bg-primary-subtle text-primary border border-primary-subtle me-1">{{ muscle.name }}</span>
                         {% empty %}
                             <span class="text-muted small">None specified</span>
                         {% endfor %}
+
+                        {% if exercise.user_id == user.id %}
+                        <div class="d-flex gap-2 mt-3">
+                            <a href="{% url 'exercise_update' exercise.pk %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i> Edit</a>
+                            <form method="post" action="{% url 'exercise_delete' exercise.pk %}" onsubmit="return confirm('Delete {{ exercise.name|escapejs }}?');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i> Delete</button>
+                            </form>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>

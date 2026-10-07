@@ -1,40 +1,124 @@
 {% extends 'base.html' %}
 
-{% block title %}Log New Workout | Calisthenics Tracker{% endblock %}
+{% block title %}{% if workout %}Edit{% else %}Log New{% endif %} Workout | Calisthenics Tracker{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-8 col-lg-6">
+    <div class="col-xl-11">
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-dark text-white py-3">
-                <h4 class="fw-bold mb-0"><i class="bi bi-plus-circle me-2"></i> Log New Workout</h4>
+                <h4 class="fw-bold mb-0"><i class="bi bi-plus-circle me-2"></i>{% if workout %}Edit Workout{% else %}Log New Workout{% endif %}</h4>
             </div>
             <div class="card-body p-4">
                 <form method="POST" action="">
                     {% csrf_token %}
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Started At</label>
-                        {{ form.started_at }}
+
+                    <h5 class="fw-bold mb-3 text-primary">Session Info</h5>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold" for="{{ form.started_at.id_for_label }}">Started At</label>
+                            {{ form.started_at }}
+                            {% for error in form.started_at.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold" for="{{ form.finished_at.id_for_label }}">Finished At (Optional)</label>
+                            {{ form.finished_at }}
+                            {% for error in form.finished_at.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold" for="{{ form.type.id_for_label }}">Workout Type</label>
+                            {{ form.type }}
+                            {% for error in form.type.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold" for="{{ form.notes.id_for_label }}">Session Notes</label>
+                            {{ form.notes }}
+                        </div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Finished At (Optional)</label>
-                        {{ form.finished_at }}
+
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger mb-4">
+                            {% for error in form.non_field_errors %}<div>{{ error }}</div>{% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <hr class="my-4">
+
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h5 class="fw-bold mb-0 text-primary">Sets</h5>
+                        <button type="button" id="add-set-btn" class="btn btn-outline-success btn-sm rounded-pill">
+                            <i class="bi bi-plus-lg me-1"></i> Add Set
+                        </button>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Workout Type</label>
-                        {{ form.type }}
+                    <p class="text-muted small">
+                        Durations accept <code>90</code> (seconds) or <code>00:01:30</code>.
+                        Weight is <em>added</em> weight in kg — use a negative number for band-assisted sets.
+                        Set numbers are assigned automatically per exercise.
+                    </p>
+
+                    {{ formset.management_form }}
+                    {% if formset.non_form_errors %}
+                        <div class="alert alert-danger">{% for error in formset.non_form_errors %}<div>{{ error }}</div>{% endfor %}</div>
+                    {% endif %}
+
+                    <div class="table-responsive mb-4">
+                        <table class="table table-bordered align-middle" id="sets-table">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="min-width: 200px;">Exercise</th>
+                                    <th style="min-width: 80px;">Reps</th>
+                                    <th style="min-width: 90px;">+kg</th>
+                                    <th style="min-width: 110px;">Duration</th>
+                                    <th style="min-width: 110px;">Rest</th>
+                                    <th style="min-width: 80px;">RPE</th>
+                                    <th class="text-center">Remove</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sets-table-body">
+                                {% for set_form in formset %}
+                                    {% include 'workouts/_set_row.html' with set_form=set_form %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
-                    <div class="mb-4">
-                        <label class="form-label fw-bold">Session Notes</label>
-                        {{ form.notes }}
-                    </div>
+
                     <div class="d-flex justify-content-between align-items-center">
-                        <a href="{% url 'workout_list' %}" class="btn btn-outline-secondary">Cancel</a>
-                        <button type="submit" class="btn btn-primary px-4">Save Workout Session</button>
+                        <a href="{% if workout %}{% url 'workout_detail' workout.pk %}{% else %}{% url 'workout_list' %}{% endif %}" class="btn btn-outline-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary px-4">Save Workout</button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 </div>
+
+<template id="empty-set-row">
+    {% include 'workouts/_set_row.html' with set_form=formset.empty_form %}
+</template>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const addSetBtn = document.getElementById('add-set-btn');
+    const tableBody = document.getElementById('sets-table-body');
+    const totalFormsInput = document.getElementById('id_sets-TOTAL_FORMS');
+    const template = document.getElementById('empty-set-row');
+
+    addSetBtn.addEventListener('click', function () {
+        const index = parseInt(totalFormsInput.value, 10);
+        const html = template.innerHTML.replace(/__prefix__/g, index);
+        tableBody.insertAdjacentHTML('beforeend', html);
+
+        // Repeat the previous exercise so logging several sets in a row is one click.
+        const rows = tableBody.querySelectorAll('.set-form-row');
+        if (rows.length > 1) {
+            const prevSelect = rows[rows.length - 2].querySelector('select');
+            const newSelect = rows[rows.length - 1].querySelector('select');
+            if (prevSelect && newSelect) newSelect.value = prevSelect.value;
+        }
+        totalFormsInput.value = index + 1;
+    });
+});
+</script>
 {% endblock %}

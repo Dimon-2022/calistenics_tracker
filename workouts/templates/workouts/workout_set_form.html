@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block title %}{% if workout_set %}Edit{% else %}Compose{% endif %} Set | Calisthenics Tracker{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-9">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-dark text-white py-3">
+                <h4 class="fw-bold mb-0"><i class="bi bi-layers me-2"></i>{% if workout_set %}Edit Set{% else %}Compose a Set{% endif %}</h4>
+            </div>
+            <div class="card-body p-4">
+                {% if not has_workouts %}
+                    <div class="alert alert-info mb-0">
+                        A set belongs to a workout session. <a href="{% url 'workout_create' %}">Log a workout</a> first.
+                    </div>
+                {% else %}
+                <form method="POST">
+                    {% csrf_token %}
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger">{% for error in form.non_field_errors %}<div>{{ error }}</div>{% endfor %}</div>
+                    {% endif %}
+
+                    <div class="row g-3">
+                        {% for field in form %}
+                        <div class="{% if field.name == 'workout' or field.name == 'exercise' %}col-md-6{% elif field.name == 'notes' %}col-12{% else %}col-md-4{% endif %}">
+                            <label class="form-label fw-bold" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.help_text %}<div class="form-text">{{ field.help_text }}</div>{% endif %}
+                            {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="d-flex flex-wrap justify-content-between gap-2 mt-4">
+                        <a href="{% if workout_set %}{% url 'workout_detail' workout_set.workout_id %}{% else %}{% url 'workout_set_list' %}{% endif %}" class="btn btn-outline-secondary">Cancel</a>
+                        <div class="d-flex gap-2">
+                            {% if not workout_set %}
+                            <button type="submit" name="add_another" value="1" class="btn btn-outline-success">Save &amp; add another</button>
+                            {% endif %}
+                            <button type="submit" class="btn btn-success px-4">Save Set</button>
+                        </div>
+                    </div>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

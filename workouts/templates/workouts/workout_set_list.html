@@ -1,12 +1,45 @@
 {% extends 'base.html' %}
+{% load workout_extras %}
 
 {% block title %}Workout Sets | Calisthenics Tracker{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
     <div>
-        <h2 class="fw-bold mb-0">Completed Workout Sets</h2>
-        <p class="text-muted mb-0">Individual repetitions, weights, and rest periods recorded</p>
+        <h2 class="fw-bold mb-0">Workout Sets</h2>
+        <p class="text-muted mb-0">Every set you recorded: reps, added weight, duration, rest and effort</p>
+    </div>
+    <a href="{% url 'workout_set_create' %}" class="btn btn-success rounded-pill">
+        <i class="bi bi-plus-lg"></i> Compose a Set
+    </a>
+</div>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-4">
+        <form method="GET">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label fw-bold" for="{{ form.exercise.id_for_label }}">Exercise</label>
+                    {{ form.exercise }}
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold" for="{{ form.muscle.id_for_label }}">Muscle Group</label>
+                    {{ form.muscle }}
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold" for="{{ form.date_from.id_for_label }}">From Date</label>
+                    {{ form.date_from }}
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold" for="{{ form.date_to.id_for_label }}">To Date</label>
+                    {{ form.date_to }}
+                </div>
+                <div class="col-12 text-end">
+                    <a href="{% url 'workout_set_list' %}" class="btn btn-outline-secondary me-2">Reset</a>
+                    <button type="submit" class="btn btn-primary px-4"><i class="bi bi-filter"></i> Apply Filters</button>
+                </div>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -17,30 +50,45 @@
                 <thead class="table-dark">
                     <tr>
                         <th scope="col" class="ps-4">Exercise</th>
+                        <th scope="col">Set</th>
                         <th scope="col">Reps</th>
-                        <th scope="col">Weight</th>
+                        <th scope="col">Added weight</th>
                         <th scope="col">Duration</th>
-                        <th scope="col">Rest Time</th>
-                        <th scope="col">Workout Session</th>
+                        <th scope="col">Rest</th>
+                        <th scope="col">RPE</th>
+                        <th scope="col">Workout</th>
+                        <th scope="col"></th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for set in sets %}
+                    {% for set in page_obj %}
                     <tr>
                         <td class="ps-4 fw-bold text-primary">{{ set.exercise.name }}</td>
-                        <td><span class="badge bg-primary rounded-pill">{{ set.reps|default:"0" }} reps</span></td>
-                        <td>{{ set.weight|default:"0" }} lbs</td>
-                        <td>{{ set.duration|default:"-" }}</td>
-                        <td>{{ set.rest_time|default:"-" }}</td>
-                        <td class="small text-muted">
-                            {{ set.workout.get_type_display }} ({{ set.workout.started_at|date:"M d, Y" }})
+                        <td>#{{ set.set_number }}</td>
+                        <td>{% if set.reps %}<span class="badge bg-primary rounded-pill">{{ set.reps }} reps</span>{% else %}—{% endif %}</td>
+                        <td>{% if set.weight is not None %}{{ set.weight|floatformat:"-2" }} kg{% else %}—{% endif %}</td>
+                        <td>{{ set.duration|duration }}</td>
+                        <td>{{ set.rest_time|duration }}</td>
+                        <td>{{ set.rpe|default:"—" }}</td>
+                        <td class="small">
+                            <a href="{% url 'workout_detail' set.workout_id %}" class="text-decoration-none">
+                                {{ set.workout.get_type_display }} ({{ set.workout.started_at|date:"M d, Y" }})
+                            </a>
+                        </td>
+                        <td class="text-end pe-3 text-nowrap">
+                            <a href="{% url 'workout_set_update' set.pk %}" class="btn btn-sm btn-link"><i class="bi bi-pencil"></i></a>
+                            <form method="post" action="{% url 'workout_set_delete' set.pk %}" class="d-inline" onsubmit="return confirm('Delete this set?');">
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                <button type="submit" class="btn btn-sm btn-link text-danger"><i class="bi bi-trash"></i></button>
+                            </form>
                         </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="6" class="text-center py-5 text-muted">
+                        <td colspan="9" class="text-center py-5 text-muted">
                             <i class="bi bi-layers fs-1 d-block mb-2"></i>
-                            No workout sets logged yet.
+                            No workout sets found.
                         </td>
                     </tr>
                     {% endfor %}
@@ -49,4 +97,5 @@
         </div>
     </div>
 </div>
+{% include 'workouts/_pagination.html' %}
 {% endblock %}
